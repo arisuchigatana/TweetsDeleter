@@ -1,14 +1,18 @@
-var authorization = "Bearer ***"; // replace by authorization value
+/* Replace by authorization value */
+var authorization = "Bearer ***";
 var ua = navigator.userAgentData.brands.map(brand => `"${brand.brand}";v="${brand.version}"`).join(', ');
-var client_tid = "***"; // replace by X-Client-Transaction-Id value
-var client_uuid = "***"; // replace by X-Client-Uuid value
+/* Replace by X-Client-Transaction-Id value */
+var client_tid = "***";
+/* Replace by X-Client-Uuid value */
+var client_uuid = "***"; 
 var csrf_token = getCookie("ct0");
 var random_resource = "uYU5M2i12UhDvDTzN6hZPg";
 var random_resource_old_tweets = "H8OOoI-5ZE4NxgRr8lfyWg"
 var language_code = navigator.language.split("-")[0]
 var tweets_to_delete = []
 var user_id = getCookie("twid").substring(4);
-var username = "YourUsernameHere" // replace with your username
+/* replace with your username */
+var username = "YourUsernameHere" 
 var stop_signal = undefined
 var twitter_archive_content = undefined
 var twitter_archive_loading_confirmed = false
@@ -16,50 +20,52 @@ var twitter_archive_loading_confirmed = false
 var delete_options = {
 	/*  from_archive: If you downloaded your archive from Twitter, set this to true.
 	    You will be prompt to upload the tweets.js file from it.
-		Advantage is that this is much more reliable and faster.
-		You can combine this with options: unretweet, match_any_keywords, tweets_to_ignore, after/before date
-		others will be ignored
-	 */
+	    Advantage is that this is much more reliable and faster.
+	    You can combine this with options: unretweet, match_any_keywords, tweets_to_ignore, after/before date
+	    others will be ignored */
 	"from_archive":false,
-	/*  unretweet: seems obvious, but it unretweet if set to true */
+
+	/*  unretweet: change it to true if you want to delete retweets */
 	"unretweet":false,
+	
 	/* do_not_remove_pinned_tweet: THIS CAN FAIL. Twitter has too many different way to format their response that I cannot guarantee this to work 100%
 	   It should work for newer tweets. HOWEVER, use the "tweets_to_ignore" below and put in your pinned tweet ID, this will work 100%.
-	   'why do you make this option then', this is a safeguard for people that forgot to add their pinned tweet in the ignore list.
-	*/
+	   'why do you make this option then', this is a safeguard for people that forgot to add their pinned tweet in the ignore list. */
 	"do_not_remove_pinned_tweet":true,
-	/* delete_message_with_url_only: self explanatory, but will delete tweets that contain links */
+	
+	/* delete_message_with_url_only: Delete tweets that contain links */
 	"delete_message_with_url_only":false,
+
 	/* delete_specific_ids_only: Array of tweet IDs that the script will delete. The script will not delete anything else than these IDs. Any other option will be ignored.
 	   a tweet id is the number you see on the right of the url: https://x.com/USERNAME/status/1695001000000000
-	   an example of how the array can look like : ["1695001000000000", "1303001000000000"] don't forget the quotes ""
-	*/
+	   an example of how the array can look like : ["1695001000000000", "1303001000000000"] don't forget the quotes "" */
+	
 	"delete_specific_ids_only":[""],
 	/*
-		match_any_keywords : if any of the strings is found, delete the tweet. It's OR not AND. Example : ["hello", "hi", "yo"]
-		if no words are given, it will match all. Can be combined with delete_message_with_url_only
-		links shouldn't be used as keywords.
-	*/
+	   match_any_keywords : if any of the strings is found, delete the tweet. It's OR not AND. Example : ["hello", "hi", "yo"]
+	   if no words are given, it will match all. Can be combined with delete_message_with_url_only
+	   links shouldn't be used as keywords. */
+
 	"match_any_keywords":[""],
 	/*
-		tweets_to_ignore : give all the tweet ids that you want to keep.
-		To find the id of the tweet, click on it, then copy the number you find in the url
-		it looks like that : https://x.com/USERNAME/status/1695001000000000, the id here is 1695001000000000
-		It expects strings, so add the double-quotes around it, like that : ["1695001000000000"], you can give multiple ids ofc it's an array
-	*/
+	   tweets_to_ignore : give all the tweet ids that you want to keep.
+	   To find the id of the tweet, click on it, then copy the number you find in the url
+	   it looks like that : https://x.com/USERNAME/status/1695001000000000, the id here is 1695001000000000
+	   It expects strings, so add the double-quotes around it, like that : ["1695001000000000"], you can give multiple ids ofc it's an array */
 	"tweets_to_ignore":[
-		"00000000000000", // these
-		"111111111111111", // ids
-		"222222222222" // are examples, you can safely keep them or replace them by your own ids.
+	/* these id's are examples, you can safely keep them or replace them by your own ids. */
+		"00000000000000", 
+		"111111111111111",
+		"222222222222"
 	],
+
 	/* old_tweets : IF the script worked without any error but haven't deleted some old tweets, set this to true.*/
 	"old_tweets":false,
 	/*
-		after_date // before_date : allows you to delete tweets that belong in a specific time frame
-		In the example below, tweets that were made before 2100-01-01 AND after 1900-01-01 will be deleted. (these dates are not included. It's AFTER and BEFORE)
-		Let's say you want to delete tweets from past 6 months. Today is September 19th 2023.
-		You would set after_date to 2023-03-18 (effectively 6 months ago) and before_date 2023-09-20 (tomorrow's date. So it deletes tweets from today too) 
-	*/
+	   after_date // before_date : allows you to delete tweets that belong in a specific time frame
+	   In the example below, tweets that were made before 2100-01-01 AND after 1900-01-01 will be deleted. (these dates are not included. It's AFTER and BEFORE)
+	   Let's say you want to delete tweets from past 6 months. Today is September 19th 2023.
+	   You would set after_date to 2023-03-18 (effectively 6 months ago) and before_date 2023-09-20 (tomorrow's date. So it deletes tweets from today too)  */
 	"after_date":new Date('1900-01-01'), // year-month-day
 	"before_date":new Date('2100-01-01') // year-month-day
 }
@@ -67,9 +73,10 @@ var delete_options = {
 function buildAcceptLanguageString() {
 	const languages = navigator.languages;
 
-	// Check if we have any languages
+	/* Check if we have any languages */
 	if (!languages || languages.length === 0) {
-		return "en-US,en;q=0.9"; // Default value if nothing is available
+		/* Default value if nothing is available */
+		return "en-US,en;q=0.9"; 
 	}
 
 	let q = 1;
@@ -386,7 +393,7 @@ var entries = undefined
 if (delete_options["from_archive"] == true) {
 	console.log("Waiting for user to load his Twitter archive")
 
-    // Create modal elements
+    /* Create modal elements */
     const modal = document.createElement('div');
     modal.id = 'myModal';
     modal.className = 'modal';
@@ -406,14 +413,14 @@ if (delete_options["from_archive"] == true) {
     dropArea.className = 'drop-area';
     dropArea.innerHTML = '<p>Drop your tweets.js from your Twitter Archive here</p>';
 
-    // Append elements
+    /* Append elements */
     modalContent.appendChild(closeSpan);
     modalContent.appendChild(header);
     modalContent.appendChild(dropArea);
     modal.appendChild(modalContent);
     document.body.appendChild(modal);
 
-    // Add CSS styles
+    /* Add CSS styles */
     const styles = `
         .modal {
             display: none;
@@ -493,10 +500,10 @@ if (delete_options["from_archive"] == true) {
     styleSheet.innerText = styles;
     document.head.appendChild(styleSheet);
 
-    // Display modal
+    /* Display modal */
     modal.style.display = 'flex';
 
-    // Close modal on click
+    /* Close modal on click */
     closeSpan.onclick = function() {
         modal.style.display = 'none';
     };
@@ -510,21 +517,21 @@ if (delete_options["from_archive"] == true) {
 	confirmButton.className = 'confirm-button';
 	confirmButton.style.marginTop = "5px"
 
-	// Append confirm button to modal content
+	/* Append confirm button to modal content */
 	modalContent.appendChild(confirmButton);
 
-	// Confirm button event listener
+	/* Confirm button event listener */
 	confirmButton.addEventListener('click', () => {
 		if (twitter_archive_content) {
 			console.log("Confirmation received. File processed.");
 			twitter_archive_loading_confirmed = true
 			modal.style.display = 'none';
-			// Further processing can be done here
+			/* Further processing can be done here */
 		} else {
 			console.error("No file loaded. Please load a file before confirming.");
 		}
 	});
-    // Drag and Drop functionality
+    /* Drag and Drop functionality */
     dropArea.addEventListener('dragover', (event) => {
         event.stopPropagation();
         event.preventDefault();
@@ -542,16 +549,16 @@ if (delete_options["from_archive"] == true) {
         dropArea.style.borderColor = '#007bff';
         const files = event.dataTransfer.files;
 
-        // Process file here
+        /* Process file here */
         console.log(files[0]);
     });
 
-    // Click to upload functionality
+    /* Click to upload functionality */
     dropArea.onclick = function() {
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
         fileInput.onchange = e => {
-            // Process file here
+            /* Process file here */
             console.log(e.target.files[0]);
         };
         fileInput.click();
@@ -561,10 +568,12 @@ if (delete_options["from_archive"] == true) {
 		reader.onload = function(event) {
 			const content = event.target.result;
 	
-			// Split by '=' and remove the first part
+			/* Split by '=' and remove the first part */
 			const parts = content.split('=');
-			parts.shift(); // Remove the first element
-			const jsonPart = parts.join('=').trim(); // Rejoin the rest and trim
+			/* Remove the first element */
+			parts.shift(); 
+			/* Rejoin the rest and trim */
+			const jsonPart = parts.join('=').trim(); 
 	
 			try {
 				const data = JSON.parse(jsonPart);
@@ -577,17 +586,18 @@ if (delete_options["from_archive"] == true) {
 		reader.onerror = function(error) {
 			console.error("Error reading file:", error);
 		};
-		reader.readAsText(file); // Read the file as text
+		/* Read the file as text */
+		reader.readAsText(file); 
 	}
 
-    // Modify the drop event
+    /* Modify the drop event */
     dropArea.addEventListener('drop', (event) => {
-        // ... [existing event handler code] ...
+        /* ... [existing event handler code] ... */
         const file = event.dataTransfer.files[0];
         readFile(file);
     });
 
-    // Modify the file input change event
+    /* Modify the file input change event */
     dropArea.onclick = function() {
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
@@ -601,18 +611,21 @@ if (delete_options["from_archive"] == true) {
 		event.stopPropagation();
 		event.preventDefault();
 		event.dataTransfer.dropEffect = 'copy';
-		dropArea.classList.add('active'); // Add 'active' class
+		/* Add 'active' class */
+		dropArea.classList.add('active'); 
 	});
 	
 	dropArea.addEventListener('dragleave', (event) => {
-		dropArea.classList.remove('active'); // Remove 'active' class
+		/* Remove 'active' class */
+		dropArea.classList.remove('active'); 
 	});
 	
 	dropArea.addEventListener('drop', (event) => {
 		event.stopPropagation();
 		event.preventDefault();
-		dropArea.classList.remove('active'); // Remove 'active' class
-		// Rest of your drop event code...
+		/* Remove 'active' class */
+		dropArea.classList.remove('active'); 
+		/* Rest of your drop event code... */
 	});
 }
 
@@ -639,4 +652,4 @@ else {
 	await delete_tweets(delete_options["delete_specific_ids_only"]);
 }
 
-console.log("DELETION COMPLETE (if error happened before this may be not true)")
+console.log("DELETION COMPLETE (if an error happened before, this may be not true)")
